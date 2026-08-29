@@ -165,6 +165,15 @@ module ActiveRecord
           []
         end
 
+        def projections(table_name)
+          select_all(<<~SQL.squish).to_a
+            SELECT name, query
+            FROM system.projections
+            WHERE database = currentDatabase() AND table = #{quote(table_name)}
+            ORDER BY name
+          SQL
+        end
+
         def add_index_options(table_name, expression, **options)
           options.assert_valid_keys(:name, :type, :granularity, :first, :after, :if_not_exists, :if_exists)
           options[:name] ||= index_name(table_name, expression)

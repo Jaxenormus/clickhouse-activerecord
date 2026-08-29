@@ -86,9 +86,10 @@ module ClickhouseActiverecord
               raise StandardError, "Unknown type '#{column.sql_type}' for column '#{column.name}'" unless @connection.valid_type?(column.type)
               next if column.name == pk && column.name == "id"
               name = column.name =~ (/\./) ? "\"`#{column.name}`\"" : column.name.inspect
-              if column.sql_type.match?(/^(Simple)?AggregateFunction/)
+              if column.sql_type.match?(/^(Simple)?AggregateFunction/) || exact_column_type?(column)
                 tbl.print "    t.column #{name}, #{column.sql_type.inspect}"
-                colspec = prepare_column_options(column)
+                colspec = prepare_column_options(column).except(:array, :map, :low_cardinality, :limit, :precision, :scale, :unsigned, :null)
+                colspec[:null] = "false" if !column.null && !column.sql_type.match?(/\ANullable\(/)
                 tbl.print ", #{format_colspec(colspec)}" if colspec.present?
               elsif column.sql_type.match?(/\bArray\(/)
                 tbl.print "    t.column #{name}, #{column.sql_type.inspect}"
@@ -117,6 +118,12 @@ module ClickhouseActiverecord
           end
 
           tbl.puts "  end"
+          unless simple
+            @connection.projections(table).each do |projection|
+              statement = "ALTER TABLE #{@connection.quote_table_name(table)} ADD PROJECTION #{@connection.quote_column_name(projection.fetch('name'))} (#{projection.fetch('query')})"
+              tbl.puts "  execute #{statement.inspect}"
+            end
+          end
           tbl.puts
 
           tbl.rewind
@@ -166,6 +173,10 @@ module ClickhouseActiverecord
     def schema_limit(column)
       return nil if column.type == :float
       super
+    end
+
+    def exact_column_type?(column)
+      column.sql_type.match?(/\b(?:Date32|DateTime64|Float64)\b|DateTime\('/)
     end
 
     def schema_unsigned(column)

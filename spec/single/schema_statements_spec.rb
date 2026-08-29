@@ -11,6 +11,30 @@ RSpec.describe 'ActiveRecord::ConnectionAdapters::Clickhouse::SchemaStatements' 
     end
   end
 
+  describe '#projections' do
+    before do
+      connection.execute('CREATE TABLE projection_test (id UInt64, value Float64, happened_on Date32, happened_at DateTime64(6, \'UTC\'), PROJECTION by_id (SELECT * ORDER BY id)) ENGINE = MergeTree ORDER BY id')
+    end
+
+    after { connection.execute('DROP TABLE IF EXISTS projection_test') }
+
+    it 'returns the projection definitions' do
+      expect(connection.projections('projection_test')).to eq([{ 'name' => 'by_id', 'query' => 'SELECT * ORDER BY id' }])
+    end
+
+    it 'dumps exact types and projections' do
+      require 'clickhouse-activerecord/schema_dumper'
+
+      schema = StringIO.new
+      ClickhouseActiverecord::SchemaDumper.dump(connection, schema)
+
+      expect(schema.string).to include('t.column "value", "Float64"')
+      expect(schema.string).to include('t.column "happened_on", "Date32"')
+      expect(schema.string).to include('t.column "happened_at", "DateTime64(6, \'UTC\')"')
+      expect(schema.string).to include('execute "ALTER TABLE projection_test ADD PROJECTION by_id (SELECT * ORDER BY id)"')
+    end
+  end
+
   describe '#truncate_tables' do
     before do
       connection.execute('CREATE TABLE truncate_test (id UInt64, name String) ENGINE = MergeTree ORDER BY id')
