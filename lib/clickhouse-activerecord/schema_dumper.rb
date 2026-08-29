@@ -83,10 +83,9 @@ module ClickhouseActiverecord
           # then dump all non-primary key columns
           if simple || !view_match
             columns.each do |column|
-              raise StandardError, "Unknown type '#{column.sql_type}' for column '#{column.name}'" unless @connection.valid_type?(column.type)
               next if column.name == pk && column.name == "id"
               name = column.name =~ (/\./) ? "\"`#{column.name}`\"" : column.name.inspect
-              if column.sql_type.match?(/^(Simple)?AggregateFunction/) || exact_column_type?(column)
+              if column.sql_type.match?(/^(Simple)?AggregateFunction/) || exact_column_type?(column) || !@connection.valid_type?(column.type)
                 tbl.print "    t.column #{name}, #{column.sql_type.inspect}"
                 colspec = prepare_column_options(column).except(:array, :map, :low_cardinality, :limit, :precision, :scale, :unsigned, :null)
                 colspec[:null] = "false" if !column.null && !column.sql_type.match?(/\ANullable\(/)
@@ -176,7 +175,7 @@ module ClickhouseActiverecord
     end
 
     def exact_column_type?(column)
-      column.sql_type.match?(/\b(?:Date32|DateTime64|Float64)\b|DateTime\('/)
+      column.sql_type.match?(/\b(?:Date(?:32)?|DateTime64|Float64)\b|DateTime\('/)
     end
 
     def schema_unsigned(column)

@@ -13,7 +13,7 @@ RSpec.describe 'ActiveRecord::ConnectionAdapters::Clickhouse::SchemaStatements' 
 
   describe '#projections' do
     before do
-      connection.execute('CREATE TABLE projection_test (id UInt64, value Float64, happened_on Date32, happened_at DateTime64(6, \'UTC\'), PROJECTION by_id (SELECT * ORDER BY id)) ENGINE = MergeTree ORDER BY id')
+      connection.execute('CREATE TABLE projection_test (id UInt64, value Float64, started_on Date, happened_on Date32, happened_at DateTime64(6, \'UTC\'), boundary MultiPolygon, PROJECTION by_id (SELECT * ORDER BY id)) ENGINE = MergeTree ORDER BY id')
     end
 
     after { connection.execute('DROP TABLE IF EXISTS projection_test') }
@@ -29,8 +29,10 @@ RSpec.describe 'ActiveRecord::ConnectionAdapters::Clickhouse::SchemaStatements' 
       ClickhouseActiverecord::SchemaDumper.dump(connection, schema)
 
       expect(schema.string).to include('t.column "value", "Float64"')
+      expect(schema.string).to include('t.column "started_on", "Date"')
       expect(schema.string).to include('t.column "happened_on", "Date32"')
       expect(schema.string).to include('t.column "happened_at", "DateTime64(6, \'UTC\')"')
+      expect(schema.string).to include('t.column "boundary", "MultiPolygon"')
       expect(schema.string).to include('execute "ALTER TABLE projection_test ADD PROJECTION by_id (SELECT * ORDER BY id)"')
     end
   end
