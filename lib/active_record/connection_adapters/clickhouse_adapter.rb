@@ -102,7 +102,7 @@ module ActiveRecord
         string: { name: 'String' },
         integer: { name: 'UInt32' },
         big_integer: { name: 'UInt64' },
-        float: { name: 'Float64' },
+        float: { name: 'Float32' },
         decimal: { name: 'Decimal' },
         datetime: { name: 'DateTime' },
         datetime64: { name: 'DateTime64' },
