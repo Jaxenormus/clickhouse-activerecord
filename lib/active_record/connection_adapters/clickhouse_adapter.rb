@@ -102,7 +102,7 @@ module ActiveRecord
         string: { name: 'String' },
         integer: { name: 'UInt32' },
         big_integer: { name: 'UInt64' },
-        float: { name: 'Float32' },
+        float: { name: 'Float64' },
         decimal: { name: 'Decimal' },
         datetime: { name: 'DateTime' },
         datetime64: { name: 'DateTime64' },
@@ -607,7 +607,10 @@ module ActiveRecord
       private
 
       def connect
-        @connection = @connection_parameters[:connection] || Net::HTTP.start(@connection_parameters[:host], @connection_parameters[:port], use_ssl: @connection_parameters[:ssl], verify_mode: OpenSSL::SSL::VERIFY_NONE)
+        @connection = @connection_parameters[:connection] || Net::HTTP.new(@connection_parameters[:host], @connection_parameters[:port]).tap do |connection|
+          connection.use_ssl = @connection_parameters[:ssl]
+          connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
 
         @connection.ca_file = @connection_parameters[:ca_file] if @connection_parameters[:ca_file]
         @connection.read_timeout = @connection_parameters[:read_timeout] if @connection_parameters[:read_timeout]

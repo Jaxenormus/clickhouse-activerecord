@@ -90,6 +90,15 @@ module ClickhouseActiverecord
                 tbl.print "    t.column #{name}, #{column.sql_type.inspect}"
                 colspec = prepare_column_options(column)
                 tbl.print ", #{format_colspec(colspec)}" if colspec.present?
+              elsif column.sql_type.match?(/\bArray\(/)
+                tbl.print "    t.column #{name}, #{column.sql_type.inspect}"
+                colspec = prepare_column_options(column).except(:array, :low_cardinality, :null)
+                colspec[:null] = "false" if !column.null && !column.sql_type.match?(/\ANullable\(/)
+                if column.default.is_a?(Array) || column.default == "[]"
+                  colspec.delete(:default)
+                  colspec[:default] = '-> { "[]" }'
+                end
+                tbl.print ", #{format_colspec(colspec)}" if colspec.present?
               else
                 type, colspec = column_spec(column)
                 tbl.print "    t.#{type} #{name}"
