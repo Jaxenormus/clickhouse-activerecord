@@ -3,6 +3,14 @@
 RSpec.describe 'ActiveRecord::ConnectionAdapters::Clickhouse::SchemaStatements' do
   let(:connection) { ActiveRecord::Base.connection }
 
+  describe '#add_index_options' do
+    it 'generates the index name' do
+      index = connection.add_index_options('profiles', 'tupleElement(full_name_state, 2)', type: 'bloom_filter')
+
+      expect(index.name).to eq('index_profiles_on_tupleElement_full_name_state_2')
+    end
+  end
+
   describe '#truncate_tables' do
     before do
       connection.execute('CREATE TABLE truncate_test (id UInt64, name String) ENGINE = MergeTree ORDER BY id')

@@ -167,6 +167,7 @@ module ActiveRecord
 
         def add_index_options(table_name, expression, **options)
           options.assert_valid_keys(:name, :type, :granularity, :first, :after, :if_not_exists, :if_exists)
+          options[:name] ||= index_name(table_name, expression)
 
           validate_index_length!(table_name, options[:name])
 
