@@ -314,6 +314,7 @@ module ActiveRecord
         # @return [Net::HTTPResponse]
         def request(statement, settings: {}, except_params: [])
           @lock.synchronize do
+            @connection.start unless @connection.started?
             @connection.post("/?#{settings_params(settings, except: except_params)}",
                              statement.formatted_sql,
                              build_request_headers(include_database: !except_params.include?(:database)))
