@@ -9,11 +9,12 @@ module ActiveRecord
         end
 
       class Column < ActiveRecord::ConnectionAdapters::Column
-        attr_reader :codec, :default_kind
+        attr_reader :codec, :default_expression, :default_kind
 
-        def initialize(*, codec: nil, default_kind: nil, **)
+        def initialize(*, codec: nil, default_expression: nil, default_kind: nil, **)
           super
           @codec = codec
+          @default_expression = default_expression
           @default_kind = ActiveSupport::StringInquirer.new(default_kind.to_s.downcase.presence || 'none')
         end
 

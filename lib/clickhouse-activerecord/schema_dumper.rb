@@ -88,6 +88,7 @@ module ClickhouseActiverecord
               if column.sql_type.match?(/^(Simple)?AggregateFunction/) || exact_column_type?(column) || !@connection.valid_type?(column.type)
                 tbl.print "    t.column #{name}, #{column.sql_type.inspect}"
                 colspec = prepare_column_options(column).except(:array, :map, :low_cardinality, :limit, :precision, :scale, :unsigned, :null)
+                colspec[:default] = "-> { #{column.default_expression.inspect} }" if column.default_kind.default? && column.default_expression.present?
                 colspec[:null] = "false" if !column.null && !column.sql_type.match?(/\ANullable\(/)
                 tbl.print ", #{format_colspec(colspec)}" if colspec.present?
               elsif column.sql_type.match?(/\bArray\(/)
